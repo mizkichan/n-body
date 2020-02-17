@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  background-color: black;
+}
+
+canvas {
+  display: block;
+}
+
+/* vim: set ts=2 sw=2 et: */
