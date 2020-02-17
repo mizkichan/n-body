@@ -2,7 +2,8 @@ import { vec3, mat4 } from "gl-matrix";
 import renderVert from "./render.vert";
 import renderFrag from "./render.frag";
 import updateVert from "./update.vert";
-import updateFrag from "./update.frag";
+import updatePositionFrag from "./updatePosition.frag";
+import updateVelocityFrag from "./updatePosition.frag";
 
 const TEXTURE_SIZE = 256;
 
@@ -35,10 +36,24 @@ function main() {
     attributes: ["index"],
     uniforms: ["positionTexture", "perspective", "lookAt"]
   });
-  const updateProgram = createProgram(gl, updateVert, updateFrag, {
-    attributes: ["position"],
-    uniforms: ["positionTexture", "velocityTexture"]
-  });
+  const updatePositionProgram = createProgram(
+    gl,
+    updateVert,
+    updatePositionFrag,
+    {
+      attributes: ["position"],
+      uniforms: ["positionTexture", "velocityTexture"]
+    }
+  );
+  const updateVelocityProgram = createProgram(
+    gl,
+    updateVert,
+    updateVelocityFrag,
+    {
+      attributes: ["position"],
+      uniforms: ["positionTexture", "velocityTexture"]
+    }
+  );
 
   // 位置テクスチャの初期化
   const positions = range(TEXTURE_SIZE ** 2).flatMap(() =>
@@ -49,7 +64,7 @@ function main() {
 
   // 速度テクスチャの初期化
   const velocities = range(TEXTURE_SIZE ** 2).flatMap(() =>
-    randomPointInSphere(0.01)
+    randomPointInSphere(0.001)
   );
   let frontVelocityTexture = createFrameBuffer(gl, TEXTURE_SIZE, velocities);
   let backVelocityTexture = createFrameBuffer(gl, TEXTURE_SIZE, velocities);
@@ -69,32 +84,17 @@ function main() {
   // インデックスバッファの定義
   const indexBuffer = createBuffer(gl, range(TEXTURE_SIZE ** 2));
 
-  // 変換行列の定義
+  // 変換行列の初期化
   const perspective = mat4.create();
-  mat4.perspective(
-    perspective,
-    degrees(45), // field of view
-    gl.canvas.width / gl.canvas.height, // aspect
-    0.1, // near
-    100 // far
-  );
   const lookAt = mat4.create();
-  mat4.lookAt(
-    lookAt,
-    [0, 3, 0], // eye
-    [0, 0, 0], // center
-    [0, 0, 1] // up
-  );
 
-  // 更新処理
-  const update = () => {
-    gl.useProgram(updateProgram.program);
+  // 速度更新処理
+  const updateVelocity = () => {
+    gl.useProgram(updateVelocityProgram.program);
     gl.viewport(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
 
     // 更新対象のフレームバッファをバインド
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frontPositionTexture.framebuffer);
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frontVelocityTexture.framebuffer);
 
     // テクスチャをバインド
     gl.activeTexture(gl.TEXTURE0);
@@ -107,23 +107,62 @@ function main() {
 
     // attributes の設定
     gl.vertexAttribPointer(
-      updateProgram.attributes.index,
+      updateVelocityProgram.attributes.position,
       2,
       gl.FLOAT,
       false,
       0,
       0
     );
-    gl.enableVertexAttribArray(updateProgram.attributes.index);
+    gl.enableVertexAttribArray(updateVelocityProgram.attributes.position);
 
     // uniforms の設定
-    gl.uniform1i(updateProgram.uniforms.positionTexture, 0);
-    gl.uniform1i(updateProgram.uniforms.velocityTexture, 1);
+    gl.uniform1i(updateVelocityProgram.uniforms.positionTexture, 0);
+    gl.uniform1i(updateVelocityProgram.uniforms.velocityTexture, 1);
 
     // 更新
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-    // 更新対象のフレームバッファをアンバインド
+    // アンバインド
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  };
+
+  // 位置更新処理
+  const updatePosition = () => {
+    gl.useProgram(updatePositionProgram.program);
+    gl.viewport(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+
+    // 更新対象のフレームバッファをバインド
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frontPositionTexture.framebuffer);
+
+    // テクスチャをバインド
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, backPositionTexture.texture);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, backVelocityTexture.texture);
+
+    // バッファをバインド
+    gl.bindBuffer(gl.ARRAY_BUFFER, planeBuffer);
+
+    // attributes の設定
+    gl.vertexAttribPointer(
+      updatePositionProgram.attributes.position,
+      2,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
+    gl.enableVertexAttribArray(updatePositionProgram.attributes.position);
+
+    // uniforms の設定
+    gl.uniform1i(updatePositionProgram.uniforms.positionTexture, 0);
+    gl.uniform1i(updatePositionProgram.uniforms.velocityTexture, 1);
+
+    // 更新
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // アンバインド
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   };
 
@@ -134,7 +173,7 @@ function main() {
 
     // テクスチャをバインド
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, frontPositionTexture.texture);
+    gl.bindTexture(gl.TEXTURE_2D, backPositionTexture.texture);
 
     // バッファをバインド
     gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer);
@@ -152,7 +191,20 @@ function main() {
 
     // uniforms の設定
     gl.uniform1i(renderProgram.uniforms.positionTexture, 0);
+    mat4.perspective(
+      perspective,
+      degrees(45), // field of view
+      gl.canvas.width / gl.canvas.height, // aspect
+      0.01, // near
+      1000 // far
+    );
     gl.uniformMatrix4fv(renderProgram.uniforms.perspective, false, perspective);
+    mat4.lookAt(
+      lookAt,
+      [0, 3, 0], // eye
+      [0, 0, 0], // center
+      [0, 0, 1] // up
+    );
     gl.uniformMatrix4fv(renderProgram.uniforms.lookAt, false, lookAt);
 
     // 描画
@@ -160,19 +212,22 @@ function main() {
   };
 
   const frame = () => {
-    update();
-    render();
-
     // テクスチャのスワップ
     let temp;
+
+    //updateVelocity();
+
+    temp = frontVelocityTexture;
+    frontVelocityTexture = backVelocityTexture;
+    backVelocityTexture = temp;
+
+    updatePosition();
 
     temp = frontPositionTexture;
     frontPositionTexture = backPositionTexture;
     backPositionTexture = temp;
 
-    temp = frontVelocityTexture;
-    frontVelocityTexture = backVelocityTexture;
-    backVelocityTexture = temp;
+    render();
 
     window.requestAnimationFrame(frame);
   };
@@ -238,12 +293,13 @@ function createBuffer(gl: WebGLRenderingContext, array: number[]): WebGLBuffer {
 function createFrameBuffer(
   gl: WebGLRenderingContext,
   size: number,
-  pixels: number[] | null = null
+  pixels: number[]
 ): Framebuffer {
   const framebuffer = gl.createFramebuffer()!;
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
   const texture = gl.createTexture()!;
+  gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(
     gl.TEXTURE_2D,
@@ -254,7 +310,7 @@ function createFrameBuffer(
     0, // border (must be 0)
     gl.RGBA, // format (must be the same as internal format)
     gl.FLOAT, // type
-    pixels && Float32Array.from(pixels)
+    Float32Array.from(pixels)
   );
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -263,11 +319,10 @@ function createFrameBuffer(
     gl.COLOR_ATTACHMENT0,
     gl.TEXTURE_2D,
     texture,
-    0 // mipmap level (must be 0)
+    0
   );
 
   gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   return { framebuffer, texture };

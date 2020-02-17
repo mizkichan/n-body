@@ -5,9 +5,9 @@ const float textureSize = 256.0;
 
 void main() {
   vec2 coord = gl_FragCoord.xy / textureSize;
-  vec3 position = texture2D(positionTexture, coord).xyz;
-  vec3 velocity = texture2D(velocityTexture, coord).xyz;
-  gl_FragColor = vec4(position + velocity, 1.0);
+  vec3 x = texture2D(positionTexture, coord).xyz; // position
+  vec3 v = texture2D(velocityTexture, coord).xyz; // velocity
+  gl_FragColor = vec4(x + v, 1.0);
 }
 
 /* vim: set ft=c ts=2 sw=2 et: */

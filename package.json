@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "parcel serve src/index.pug",
-    "build": "parcel build src/index.pug"
+    "build": "parcel build -d public --no-source-maps --experimental-scope-hoisting src/index.pug"
   },
   "devDependencies": {
     "glslify-bundle": "^5.1.1",
