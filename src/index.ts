@@ -3,9 +3,9 @@ import renderVert from "./render.vert";
 import renderFrag from "./render.frag";
 import updateVert from "./update.vert";
 import updatePositionFrag from "./updatePosition.frag";
-import updateVelocityFrag from "./updatePosition.frag";
+import updateVelocityFrag from "./updateVelocity.frag";
 
-const TEXTURE_SIZE = 256;
+const TEXTURE_SIZE = 64;
 
 interface Program {
   program: WebGLProgram;
@@ -57,14 +57,14 @@ function main() {
 
   // 位置テクスチャの初期化
   const positions = range(TEXTURE_SIZE ** 2).flatMap(() =>
-    randomPointInSphere(1)
+    randomPointInSphere(1000)
   );
   let frontPositionTexture = createFrameBuffer(gl, TEXTURE_SIZE, positions);
   let backPositionTexture = createFrameBuffer(gl, TEXTURE_SIZE, positions);
 
   // 速度テクスチャの初期化
   const velocities = range(TEXTURE_SIZE ** 2).flatMap(() =>
-    randomPointInSphere(0.001)
+    randomPointInSphere(1)
   );
   let frontVelocityTexture = createFrameBuffer(gl, TEXTURE_SIZE, velocities);
   let backVelocityTexture = createFrameBuffer(gl, TEXTURE_SIZE, velocities);
@@ -195,13 +195,13 @@ function main() {
       perspective,
       degrees(45), // field of view
       gl.canvas.width / gl.canvas.height, // aspect
-      0.01, // near
-      1000 // far
+      1, // near
+      10000 // far
     );
     gl.uniformMatrix4fv(renderProgram.uniforms.perspective, false, perspective);
     mat4.lookAt(
       lookAt,
-      [0, 3, 0], // eye
+      [0, 5000, 0], // eye
       [0, 0, 0], // center
       [0, 0, 1] // up
     );
@@ -215,7 +215,7 @@ function main() {
     // テクスチャのスワップ
     let temp;
 
-    //updateVelocity();
+    updateVelocity();
 
     temp = frontVelocityTexture;
     frontVelocityTexture = backVelocityTexture;

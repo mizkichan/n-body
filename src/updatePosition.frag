@@ -1,7 +1,7 @@
 precision mediump float;
 uniform sampler2D positionTexture;
 uniform sampler2D velocityTexture;
-const float textureSize = 256.0;
+const float textureSize = 64.0;
 
 void main() {
   vec2 coord = gl_FragCoord.xy / textureSize;
