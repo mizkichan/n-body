@@ -35,7 +35,7 @@ function main() {
 
   // プログラムの作成
   const renderProgram = createProgram(gl, renderVert, renderFrag, {
-    attributes: ["index"],
+    attributes: ["vertex"],
     uniforms: ["positionTexture", "perspective", "lookAt"]
   });
   const updatePositionProgram = createProgram(
@@ -86,25 +86,23 @@ function main() {
   // インデックスバッファの定義
   const indexBuffer = createBuffer(gl, range(TEXTURE_SIZE ** 2));
 
-  // 球体の頂点バッファの定義
-  // See: http://www.songho.ca/opengl/gl_sphere.html
-  let vertices = [
-    ...[0, 0, 1],
-    ...range(5).flatMap(i => {
-      const theta = ((4 * i - 7) * Math.PI) / 10;
-      const z = Math.sin(Math.atan(0.5));
-      const xy = Math.cos(Math.atan(0.5));
-      return [xy * Math.cos(theta), xy * Math.sin(theta), z];
-    }),
-    ...range(5).flatMap(i => {
-      const theta = ((4 * i - 5) * Math.PI) / 10;
-      const z = Math.sin(Math.atan(0.5));
-      const xy = Math.cos(Math.atan(0.5));
-      return [xy * Math.cos(theta), xy * Math.sin(theta), -z];
-    }),
-    ...[0, 0, -1]
-  ];
-  const vertexBuffer = createBuffer(gl, vertices);
+  // 頂点バッファの定義、w要素はインデックス
+  const vertexBuffer = createBuffer(
+    gl,
+    range(TEXTURE_SIZE ** 2).flatMap(i =>
+      // prettier-ignore
+      [
+          [ [0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0] ],
+          [ [0, 0, 0], [0, 0, 1], [1, 0, 1], [1, 0, 0] ],
+          [ [0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0] ],
+          [ [0, 0, 1], [0, 1, 1], [1, 1, 1], [1, 0, 1] ],
+          [ [0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0] ],
+          [ [1, 0, 0], [1, 0, 1], [1, 1, 1], [1, 1, 0] ],
+        ]
+        .flatMap(([a, b, c, d]) => [a, b, c, c, d, a])
+        .flatMap(([x, y, z]) => [x * 5, y * 5, z * 5, i])
+    )
+  );
 
   // 変換行列の初期化
   const perspective = mat4.create();
@@ -176,7 +174,7 @@ function main() {
     gl.bindTexture(gl.TEXTURE_2D, backPositionTexture.texture);
 
     // attributes の設定
-    setAttribute(gl, renderProgram.attributes.index, indexBuffer, 1);
+    setAttribute(gl, renderProgram.attributes.vertex, vertexBuffer, 4);
 
     // uniforms の設定
     gl.uniform1i(renderProgram.uniforms.positionTexture, 0);
@@ -197,7 +195,7 @@ function main() {
     gl.uniformMatrix4fv(renderProgram.uniforms.lookAt, false, lookAt);
 
     // 描画
-    gl.drawArrays(gl.POINTS, 0, positions.length / 4);
+    gl.drawArrays(gl.TRIANGLES, 0, TEXTURE_SIZE ** 2 * 6 * 2 * 3); // 3 dimensions per 2 triangles per 6 planes
   };
 
   const frame = () => {
@@ -292,13 +290,13 @@ function createFrameBuffer(
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(
     gl.TEXTURE_2D,
-    0, // level of detail
-    gl.RGBA, // internal format
-    size, // width
-    size, // height
-    0, // border (must be 0)
-    gl.RGBA, // format (must be the same as internal format)
-    gl.FLOAT, // type
+    0,
+    gl.RGBA,
+    size,
+    size,
+    0,
+    gl.RGBA,
+    gl.FLOAT,
     Float32Array.from(pixels)
   );
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);

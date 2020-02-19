@@ -1,14 +1,15 @@
-attribute float index;
+attribute vec4 vertex;
 uniform sampler2D positionTexture;
 uniform mat4 perspective;
 uniform mat4 lookAt;
 const float textureSize = 64.0;
 
 void main() {
+  float index = vertex.w;
   vec2 coord =
       vec2(mod(index, textureSize), floor(index / textureSize)) / textureSize;
   vec3 x = texture2D(positionTexture, coord).xyz; // position
-  gl_Position = perspective * lookAt * vec4(x, 1.0);
+  gl_Position = perspective * lookAt * vec4(x + vertex.xyz, 1.0);
   gl_PointSize = 2.0;
 }
 
