@@ -27,7 +27,9 @@ function main() {
   window.onresize = resize;
   resize();
 
-  const gl = canvas.getContext("webgl")!;
+  const gl = canvas.getContext("webgl", {
+    powerPreference: "high-performance"
+  })!;
   gl.getExtension("OES_texture_float");
   gl.getExtension("WEBGL_color_buffer_float");
 
@@ -57,14 +59,14 @@ function main() {
 
   // 位置テクスチャの初期化
   const positions = range(TEXTURE_SIZE ** 2).flatMap(() =>
-    randomPointInSphere(1000)
+    randomPointInSphere(100)
   );
   let frontPositionTexture = createFrameBuffer(gl, TEXTURE_SIZE, positions);
   let backPositionTexture = createFrameBuffer(gl, TEXTURE_SIZE, positions);
 
   // 速度テクスチャの初期化
   const velocities = range(TEXTURE_SIZE ** 2).flatMap(() =>
-    randomPointInSphere(1)
+    randomPointInSphere(5)
   );
   let frontVelocityTexture = createFrameBuffer(gl, TEXTURE_SIZE, velocities);
   let backVelocityTexture = createFrameBuffer(gl, TEXTURE_SIZE, velocities);
@@ -196,12 +198,12 @@ function main() {
       degrees(45), // field of view
       gl.canvas.width / gl.canvas.height, // aspect
       1, // near
-      10000 // far
+      0 // far
     );
     gl.uniformMatrix4fv(renderProgram.uniforms.perspective, false, perspective);
     mat4.lookAt(
       lookAt,
-      [0, 5000, 0], // eye
+      [0, 1000, 0], // eye
       [0, 0, 0], // center
       [0, 0, 1] // up
     );
