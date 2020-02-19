@@ -104,19 +104,8 @@ function main() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, backVelocityTexture.texture);
 
-    // バッファをバインド
-    gl.bindBuffer(gl.ARRAY_BUFFER, planeBuffer);
-
     // attributes の設定
-    gl.vertexAttribPointer(
-      updateVelocityProgram.attributes.position,
-      2,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    );
-    gl.enableVertexAttribArray(updateVelocityProgram.attributes.position);
+    setAttribute(gl, updateVelocityProgram.attributes.position, planeBuffer, 2);
 
     // uniforms の設定
     gl.uniform1i(updateVelocityProgram.uniforms.positionTexture, 0);
@@ -143,19 +132,8 @@ function main() {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, backVelocityTexture.texture);
 
-    // バッファをバインド
-    gl.bindBuffer(gl.ARRAY_BUFFER, planeBuffer);
-
     // attributes の設定
-    gl.vertexAttribPointer(
-      updatePositionProgram.attributes.position,
-      2,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    );
-    gl.enableVertexAttribArray(updatePositionProgram.attributes.position);
+    setAttribute(gl, updatePositionProgram.attributes.position, planeBuffer, 2);
 
     // uniforms の設定
     gl.uniform1i(updatePositionProgram.uniforms.positionTexture, 0);
@@ -177,19 +155,8 @@ function main() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, backPositionTexture.texture);
 
-    // バッファをバインド
-    gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer);
-
     // attributes の設定
-    gl.vertexAttribPointer(
-      renderProgram.attributes.index,
-      1,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    );
-    gl.enableVertexAttribArray(renderProgram.attributes.index);
+    setAttribute(gl, renderProgram.attributes.index, indexBuffer, 1);
 
     // uniforms の設定
     gl.uniform1i(renderProgram.uniforms.positionTexture, 0);
@@ -328,6 +295,17 @@ function createFrameBuffer(
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   return { framebuffer, texture };
+}
+
+function setAttribute(
+  gl: WebGLRenderingContext,
+  index: GLint,
+  buffer: WebGLBuffer,
+  size: number
+): void {
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.vertexAttribPointer(index, size, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(index);
 }
 
 function degrees(value: number): number {

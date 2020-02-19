@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "parcel serve src/index.pug",
+    "start": "parcel serve -d public src/index.pug",
     "build": "parcel build -d public --no-source-maps --experimental-scope-hoisting src/index.pug"
   },
   "devDependencies": {
