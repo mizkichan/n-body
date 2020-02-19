@@ -1,4 +1,4 @@
-import { vec3, mat4 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import renderVert from "./render.vert";
 import renderFrag from "./render.frag";
 import updateVert from "./update.vert";
