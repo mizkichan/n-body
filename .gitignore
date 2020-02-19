@@ -1,5 +1,4 @@
 .cache
-dist
-node_modules
-
 .now
+node_modules
+public
