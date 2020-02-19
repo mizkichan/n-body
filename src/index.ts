@@ -86,6 +86,26 @@ function main() {
   // インデックスバッファの定義
   const indexBuffer = createBuffer(gl, range(TEXTURE_SIZE ** 2));
 
+  // 球体の頂点バッファの定義
+  // See: http://www.songho.ca/opengl/gl_sphere.html
+  let vertices = [
+    ...[0, 0, 1],
+    ...range(5).flatMap(i => {
+      const theta = ((4 * i - 7) * Math.PI) / 10;
+      const z = Math.sin(Math.atan(0.5));
+      const xy = Math.cos(Math.atan(0.5));
+      return [xy * Math.cos(theta), xy * Math.sin(theta), z];
+    }),
+    ...range(5).flatMap(i => {
+      const theta = ((4 * i - 5) * Math.PI) / 10;
+      const z = Math.sin(Math.atan(0.5));
+      const xy = Math.cos(Math.atan(0.5));
+      return [xy * Math.cos(theta), xy * Math.sin(theta), -z];
+    }),
+    ...[0, 0, -1]
+  ];
+  const vertexBuffer = createBuffer(gl, vertices);
+
   // 変換行列の初期化
   const perspective = mat4.create();
   const lookAt = mat4.create();
